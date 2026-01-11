@@ -20,12 +20,12 @@ public class RecordService {
     @Autowired
     LatestVersionRepository latestVersionRepository;
 
-    public RecordEntity getLatestRecord(Long id) throws NoSuchRecordException {
+    public RecordEntity getLatestRecord(Long id) {
         return latestVersionRepository.findLatestRecordById(id)
                 .orElseThrow(() -> new NoSuchRecordException(id));
     }
 
-    public List<RecordEntity> getRecordsByVersion(Long id) throws NoSuchRecordException {
+    public List<RecordEntity> getRecordsByVersion(Long id) {
         List<RecordEntity> entities =   latestVersionRepository.findLatestRecordByVersion(id);
         if (entities.isEmpty()) {
             throw new NoSuchRecordException(id);
@@ -34,13 +34,13 @@ public class RecordService {
     }
 
 
-    public RecordEntity getRecord(Long id, Long version) throws NoSuchRecordException {
+    public RecordEntity getRecord(Long id, Long version) {
         RecordId recordId = RecordId.builder().id(id).version(version).build();
         return recordRepository.findById(recordId)
                 .orElseThrow(() -> new NoSuchRecordException(id, version));
     }
 
-    public List<RecordEntity> listVersions(Long id) throws NoSuchRecordException {
+    public List<RecordEntity> listVersions(Long id) {
        List<RecordEntity> entities =  recordRepository.findAllByRecordId_IdOrderByRecordId_VersionAsc(id);
        if (entities.isEmpty()) {
           throw new NoSuchRecordException(id);
@@ -49,7 +49,7 @@ public class RecordService {
     }
 
     @Transactional
-    public void updateLatestVersionById(Long id, String data) throws NoSuchRecordException{
+    public void updateLatestVersionById(Long id, String data) {
         Optional<RecordEntity> existingRecord = latestVersionRepository.findLatestRecordById(id);
         existingRecord.map(er -> {
             RecordId recordId = RecordId.builder().id(id).version(er.getRecordId().getVersion() + 1).build();

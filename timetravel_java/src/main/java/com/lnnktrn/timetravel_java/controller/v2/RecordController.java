@@ -1,7 +1,6 @@
 package com.lnnktrn.timetravel_java.controller.v2;
 
 import com.lnnktrn.timetravel_java.dto.RecordDto;
-import com.lnnktrn.timetravel_java.entity.RecordEntity;
 import com.lnnktrn.timetravel_java.mapper.EntityToDtoMapper;
 import com.lnnktrn.timetravel_java.service.RecordService;
 import org.springframework.beans.factory.annotation.Autowired;
