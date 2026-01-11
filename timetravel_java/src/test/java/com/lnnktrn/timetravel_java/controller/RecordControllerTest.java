@@ -1,6 +1,7 @@
 package com.lnnktrn.timetravel_java.controller;
 
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
+import com.lnnktrn.timetravel_java.entity.RecordId;
 import com.lnnktrn.timetravel_java.repository.RecordRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ class RecordControllerTest {
     @Test
     void get_returnsPayload_whenRecordExists() throws Exception {
         RecordEntity entity = RecordEntity.builder()
-                .id(1L)
+                .recordId(RecordId.builder().id(1L).build())
                 .data("{\"a\":\"1\"}")
                 .build();
 

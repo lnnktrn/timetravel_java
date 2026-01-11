@@ -1,39 +1,92 @@
 package com.lnnktrn.timetravel_java.controller;
 
+import com.lnnktrn.timetravel_java.dto.RecordDto;
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
+import com.lnnktrn.timetravel_java.entity.RecordId;
 import com.lnnktrn.timetravel_java.repository.RecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/records")
+@RequestMapping("/api/v2/records")
 public class RecordController {
 
     @Autowired
     RecordRepository repo;
 
-    // GET /api/v1/records/{id}
+    // GET /api/v2/records/{id}?version=7
     @GetMapping("/{id}")
-    public ResponseEntity<String> getRecord(@PathVariable Long id) {
-        return repo.findById(id)
-                .map(record -> ResponseEntity.ok(record.getData()))
+    public ResponseEntity<String> getRecordByVersion(
+            @PathVariable Long id,
+            @RequestParam Long version
+    ) {
+        if (version == null || version <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        RecordId recordId = RecordId.builder().id(id).version(version).build();
+
+        return repo.findById(recordId)
+                .map(entity -> ResponseEntity.ok(entity.getData()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // POST /api/v1/records/{id}
+    // GET /api/v2/records/{id}/versions
+    @GetMapping(value = "/{id}/versions")
+    public ResponseEntity<List<RecordDto>> listVersions(@PathVariable Long id) {
+        List<RecordEntity> records =
+                repo.findAllByRecordId_IdOrderByRecordId_VersionAsc(id);
+
+        if (records.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<RecordDto> dto = records.stream()
+                .map(r -> new RecordDto(
+                        r.getRecordId().getId(),
+                        r.getRecordId().getVersion(),
+                        r.getData(),
+                        r.getCreatedAt(),   // убери если нет поля
+                        r.getUpdatedAt()    // убери если нет поля
+                ))
+                .toList();
+
+        return ResponseEntity.ok(dto);
+    }
+
+
+    // POST /api/v2/records/{id}?version=7
     @PostMapping("/{id}")
-    public ResponseEntity<Void> upsertRecord(
+    @Transactional
+    public ResponseEntity<Void> upsertByIdAndVersion(
             @PathVariable Long id,
+            @RequestParam("version") Long version,
             @RequestBody String data
     ) {
-        RecordEntity entity = repo.findById(id)
-                .orElseGet(() -> RecordEntity.builder().id(id).data("{}").build());
+        if (version == null || version <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (data == null) {
+            return ResponseEntity.badRequest().build();
+        }
 
-        entity.setData(data); // или merge-логика, если нужно
+        RecordId key =RecordId.builder().id(id).version(version).build();
+
+        boolean existed = repo.existsById(key);
+
+        RecordEntity entity = RecordEntity.builder()
+                .recordId(key)
+                .data(data)
+                .build();
+
         repo.save(entity);
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return existed
+                ? ResponseEntity.noContent().build()                 // updated
+                : ResponseEntity.status(HttpStatus.CREATED).build(); // created
     }
 }
