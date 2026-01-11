@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.lnnktrn.timetravel_java.dto.RecordDto;
 import com.lnnktrn.timetravel_java.mapper.EntityToDtoMapper;
 import com.lnnktrn.timetravel_java.service.RecordService;
+import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v2/records")
-public class RecordController {
+public class RecordVersionController {
 
     @Autowired
     private RecordService recordService;
@@ -29,11 +30,9 @@ public class RecordController {
     // GET /api/v2/records/{id}?version={version}
     @GetMapping("/{id}")
     public ResponseEntity<RecordDto> getLatestOrByVersion(
-            @PathVariable Long id,
-            @RequestParam(required = false) Long version
+            @PathVariable @Min(1) Long id,
+            @RequestParam(required = false) @Min(1) Long version
     ) {
-        if (!isPositive(id)) return ResponseEntity.badRequest().build();
-
         var entity = (version == null)
                 ? recordService.getLatestRecord(id)
                 : recordService.getRecord(id, version);
@@ -51,14 +50,8 @@ public class RecordController {
     // GET /api/v2/records/{id}/history
     @GetMapping(value = "/{id}/history")
     // List all available versions of a record
-    public ResponseEntity<List<RecordDto>> listVersions(@PathVariable Long id) {
-        if (!(isPositive(id))) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<List<RecordDto>> listVersions(@PathVariable @Min(1) Long id) {
         var records = recordService.listVersions(id);
-        if (records.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
         var dtos = records.stream().map(EntityToDtoMapper::map).toList();
         return ResponseEntity.ok(dtos);
     }
@@ -72,23 +65,15 @@ public class RecordController {
      * If record does not exist returns 404
      */
     // Apply updates to the latest version while preserving history
-    // POST /api/v2/records/{id}
+    // POST /api/v2/raecords/{id}
     @PostMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> updateRecordById(
-            @PathVariable Long id,
+            @PathVariable @Min(1) Long id,
             @RequestBody JsonNode data
     ) {
-        if (!(isPositive(id))) {
-            return ResponseEntity.badRequest().build();
-        }
-        boolean isUpdated = recordService.UpsertLatestVersion(id, data);
-        return isUpdated ? ResponseEntity.status(HttpStatus.OK).build()
-                : ResponseEntity.status(HttpStatus.CREATED).build();// created
-    }
-
-    private boolean isPositive(Long value){
-        return value != null && value > 0;
+        recordService.UpsertLatestVersion(id, data);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
 }

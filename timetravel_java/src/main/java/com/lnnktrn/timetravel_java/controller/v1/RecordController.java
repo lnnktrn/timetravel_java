@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/records")
-public class RecordVersionsController {
+public class RecordController {
     @Autowired
     RecordService recordService;
 
