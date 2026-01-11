@@ -62,36 +62,6 @@ class RecordServiceTest {
         verifyNoInteractions(recordRepository);
     }
 
-    @Test
-    void getRecordsByVersion_returnsList_whenNotEmpty() {
-        Long id = 10L;
-        List<RecordEntity> list = List.of(
-                RecordEntity.builder()
-                        .recordId(RecordId.builder().id(id).version(1L).build())
-                        .data("{\"a\":\"1\"}")
-                        .build()
-        );
-
-        when(latestVersionRepository.findLatestRecordByVersion(id)).thenReturn(list);
-
-        List<RecordEntity> result = service.getRecordsByVersion(id);
-
-        assertEquals(1, result.size());
-        verify(latestVersionRepository).findLatestRecordByVersion(id);
-        verifyNoInteractions(recordRepository);
-    }
-
-    @Test
-    void getRecordsByVersion_throws_whenEmpty() {
-        Long id = 10L;
-
-        when(latestVersionRepository.findLatestRecordByVersion(id)).thenReturn(List.of());
-
-        assertThrows(NoSuchRecordException.class, () -> service.getRecordsByVersion(id));
-        verify(latestVersionRepository).findLatestRecordByVersion(id);
-        verifyNoInteractions(recordRepository);
-    }
-
 
     @Test
     void getRecord_returnsEntity_whenFound() {

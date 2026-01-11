@@ -19,43 +19,25 @@ public class RecordController {
     private RecordService recordService;
 
     /**
-     * Get record version by given id.
+     * Get record by given id.
      *
      * @param id      - record id
-     * @param version - record version
+     * @param version (optional) - record version. If not empty, then returns a specific version of a record. If empty - returns latest version.
      * @return entityDto if record exists, 404 otherwise
-     * If version is null or version<0 returns 400
      */
+    // GET /api/v2/records/{id}?version={version}
     @GetMapping("/{id}")
-    public ResponseEntity<RecordDto> getRecordByVersion(
+    public ResponseEntity<RecordDto> getLatestOrByVersion(
             @PathVariable Long id,
-            @RequestParam Long version
+            @RequestParam(required = false) Long version
     ) {
-        if (!(isPositive(version))) {
-            return ResponseEntity.badRequest().build();
-        }
-        var entity = recordService.getRecord(id, version);
-        var dto = EntityToDtoMapper.map(entity);
-        return ResponseEntity.ok(dto);
-    }
+        if (!isPositive(id)) return ResponseEntity.badRequest().build();
 
-    /**
-     * Get record version by given id.
-     *
-     * @param version - record version
-     * @return entityDto if record exists, 404 otherwise
-     * If version is null or version<0 returns 400
-     */
-    @GetMapping("/")
-    public ResponseEntity<List<RecordDto>> getRecordsByVersion(
-            @RequestParam Long version
-    ) {
-        if (!(isPositive(version))) {
-            return ResponseEntity.badRequest().build();
-        }
-        var entities = recordService.getRecordsByVersion(version);
-        var dtos = entities.stream().map(EntityToDtoMapper::map).toList();
-        return ResponseEntity.ok(dtos);
+        var entity = (version == null)
+                ? recordService.getLatestRecord(id)
+                : recordService.getRecord(id, version);
+
+        return ResponseEntity.ok(EntityToDtoMapper.map(entity));
     }
 
     /**
@@ -65,7 +47,8 @@ public class RecordController {
      * @return List of entityDto if records exist, 404 otherwise
      * If id is null or id<0 returns 400
      */
-    @GetMapping(value = "/{id}/versions")
+    // GET /api/v2/records/{id}/history
+    @GetMapping(value = "/{id}/history")
     // List all available versions of a record
     public ResponseEntity<List<RecordDto>> listVersions(@PathVariable Long id) {
         if (!(isPositive(id))) {
@@ -88,6 +71,7 @@ public class RecordController {
      * If record does not exist returns 404
      */
     // Apply updates to the latest version while preserving history
+    // POST /api/v2/records/{id}
     @PostMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> updateLatestVersionById(
@@ -97,8 +81,9 @@ public class RecordController {
         if (!(isPositive(id))) {
             return ResponseEntity.badRequest().build();
         }
-        recordService.updateLatestVersionById(id, data);
-        return ResponseEntity.status(HttpStatus.CREATED).build(); // created
+        boolean isUpdated = recordService.UpsertLatestVersion(id, data);
+        return isUpdated ? ResponseEntity.status(HttpStatus.OK).build()
+                : ResponseEntity.status(HttpStatus.CREATED).build();// created
     }
 
     private boolean isPositive(Long value){

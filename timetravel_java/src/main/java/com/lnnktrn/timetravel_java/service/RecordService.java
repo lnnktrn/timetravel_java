@@ -25,14 +25,6 @@ public class RecordService {
                 .orElseThrow(() -> new NoSuchRecordException(id));
     }
 
-    public List<RecordEntity> getRecordsByVersion(Long id) {
-        List<RecordEntity> entities =   latestVersionRepository.findLatestRecordByVersion(id);
-        if (entities.isEmpty()) {
-            throw new NoSuchRecordException(id);
-        }
-        return entities;
-    }
-
 
     public RecordEntity getRecord(Long id, Long version) {
         RecordId recordId = RecordId.builder().id(id).version(version).build();

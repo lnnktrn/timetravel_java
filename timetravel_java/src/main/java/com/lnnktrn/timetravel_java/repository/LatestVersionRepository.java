@@ -24,16 +24,6 @@ public interface LatestVersionRepository extends JpaRepository<LatestVersionEnti
             """)
     Optional<RecordEntity> findLatestRecordById(Long id);
 
-    @Query("""
-                select r
-                from RecordEntity r
-                join LatestVersionEntity l
-                  on l.id = r.recordId.id
-                 and l.version = r.recordId.version
-                where l.version = :version
-            """)
-    List<RecordEntity> findLatestRecordByVersion(Long version);
-
     @Modifying
     @Transactional
     @Query("""
