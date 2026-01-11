@@ -1,5 +1,7 @@
 package com.lnnktrn.timetravel_java.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.lnnktrn.timetravel_java.helper.JsonNodeConverter;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -12,9 +14,10 @@ public class RecordEntity {
 
     @EmbeddedId
     private RecordId recordId;
-    
-    @Column(nullable = false)
-    private String data;
+
+    @Convert(converter = JsonNodeConverter.class)
+    @Column(name = "data", columnDefinition = "TEXT")
+    private JsonNode data;
     
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -24,7 +27,7 @@ public class RecordEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    public RecordEntity(RecordId recordId, String data, Instant createdAt, Instant updatedAt) {
+    public RecordEntity(RecordId recordId, JsonNode data, Instant createdAt, Instant updatedAt) {
         this.recordId = recordId;
         this.data = data;
         this.createdAt = createdAt;
@@ -42,11 +45,11 @@ public class RecordEntity {
         this.recordId = id;
     }
 
-    public String getData() {
+    public JsonNode getData() {
         return data;
     }
 
-    public void setData(String data) {
+    public void setData(JsonNode data) {
         this.data = data;
     }
     
@@ -74,7 +77,7 @@ public class RecordEntity {
 
     public static class RecordEntityBuilder {
         private RecordId recordId;
-        private String data;
+        private JsonNode data;
         private Instant createdAt;
         private Instant updatedAt;
 
@@ -86,7 +89,7 @@ public class RecordEntity {
             return this;
         }
 
-        public RecordEntityBuilder data(String data) {
+        public RecordEntityBuilder data(JsonNode data) {
             this.data = data;
             return this;
         }

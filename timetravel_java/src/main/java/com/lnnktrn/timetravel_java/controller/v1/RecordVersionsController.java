@@ -1,5 +1,6 @@
 package com.lnnktrn.timetravel_java.controller.v1;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.lnnktrn.timetravel_java.dto.RecordDto;
 import com.lnnktrn.timetravel_java.mapper.EntityToDtoMapper;
 import com.lnnktrn.timetravel_java.service.RecordService;
@@ -46,7 +47,7 @@ public class RecordVersionsController {
     @Transactional
     public ResponseEntity<Void> updateLatestVersionById(
             @PathVariable Long id,
-            @RequestBody String data
+            @RequestBody JsonNode data
     ) {
         if (!(isPositive(id))) {
             return ResponseEntity.badRequest().build();
