@@ -1,16 +1,13 @@
-package com.lnnktrn.timetravel_java.controller;
+package com.lnnktrn.timetravel_java.controller.v2;
 
 import com.lnnktrn.timetravel_java.dto.RecordDto;
-import com.lnnktrn.timetravel_java.entity.LatestVersionEntity;
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
-import com.lnnktrn.timetravel_java.entity.RecordId;
-import com.lnnktrn.timetravel_java.repository.LatestVersionRepository;
-import com.lnnktrn.timetravel_java.repository.RecordRepository;
+import com.lnnktrn.timetravel_java.service.RecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,9 +16,7 @@ import java.util.List;
 public class RecordController {
 
     @Autowired
-    RecordRepository repo;
-    @Autowired
-    LatestVersionRepository latestVersionRepository;
+    RecordService recordService;
 
     // GET /api/v2/records/{id}
     @GetMapping("/{id}/latest")
@@ -29,7 +24,7 @@ public class RecordController {
             @PathVariable Long id
     ) {
 
-        return latestVersionRepository.findLatestRecordById(id)
+        return recordService.getLatestRecord(id)
                 .map(entity -> ResponseEntity.ok(entity.getData()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -43,9 +38,8 @@ public class RecordController {
         if (version == null || version <= 0) {
             return ResponseEntity.badRequest().build();
         }
-        RecordId recordId = RecordId.builder().id(id).version(version).build();
 
-        return repo.findById(recordId)
+        return recordService.getRecord(id, version)
                 .map(entity -> ResponseEntity.ok(entity.getData()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -53,8 +47,7 @@ public class RecordController {
     // GET /api/v2/records/{id}/versions
     @GetMapping(value = "/{id}/versions")
     public ResponseEntity<List<RecordDto>> listVersions(@PathVariable Long id) {
-        List<RecordEntity> records =
-                repo.findAllByRecordId_IdOrderByRecordId_VersionAsc(id);
+        List<RecordEntity> records = recordService.listVersions(id);
 
         if (records.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -89,22 +82,7 @@ public class RecordController {
             return ResponseEntity.badRequest().build();
         }
 
-        RecordId key =RecordId.builder().id(id).version(version).build();
-
-        boolean existed = repo.existsById(key);
-
-        RecordEntity entity = RecordEntity.builder()
-                .recordId(key)
-                .data(data)
-                .build();
-
-        LatestVersionEntity latestVersionEntity = LatestVersionEntity.builder()
-                .id(key.getId())
-                .version(key.getVersion())
-                .build();
-        repo.save(entity);
-
-        return existed
+        return recordService.upsertByIdAndVersion(id, version, data)
                 ? ResponseEntity.noContent().build()                 // updated
                 : ResponseEntity.status(HttpStatus.CREATED).build(); // created
     }
