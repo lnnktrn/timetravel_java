@@ -1,8 +1,10 @@
 package com.lnnktrn.timetravel_java.controller;
 
 import com.lnnktrn.timetravel_java.dto.RecordDto;
+import com.lnnktrn.timetravel_java.entity.LatestVersionEntity;
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
 import com.lnnktrn.timetravel_java.entity.RecordId;
+import com.lnnktrn.timetravel_java.repository.LatestVersionRepository;
 import com.lnnktrn.timetravel_java.repository.RecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,19 @@ public class RecordController {
 
     @Autowired
     RecordRepository repo;
+    @Autowired
+    LatestVersionRepository latestVersionRepository;
+
+    // GET /api/v2/records/{id}
+    @GetMapping("/{id}/latest")
+    public ResponseEntity<String> getLatestRecord(
+            @PathVariable Long id
+    ) {
+
+        return latestVersionRepository.findLatestRecordById(id)
+                .map(entity -> ResponseEntity.ok(entity.getData()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
     // GET /api/v2/records/{id}?version=7
     @GetMapping("/{id}")
@@ -83,6 +98,10 @@ public class RecordController {
                 .data(data)
                 .build();
 
+        LatestVersionEntity latestVersionEntity = LatestVersionEntity.builder()
+                .id(key.getId())
+                .version(key.getVersion())
+                .build();
         repo.save(entity);
 
         return existed
