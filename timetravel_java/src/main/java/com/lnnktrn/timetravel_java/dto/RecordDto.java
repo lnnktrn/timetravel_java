@@ -6,6 +6,5 @@ public record RecordDto(
         Long id,
         Long version,
         String data,
-        Instant createdAt,
-        Instant updatedAt
-) {}
+        Instant createdAt
+){}

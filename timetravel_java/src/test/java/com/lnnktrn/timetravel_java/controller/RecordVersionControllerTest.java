@@ -34,7 +34,7 @@ class RecordVersionControllerTest {
 
     @MockBean RecordService recordService;
 
-    private RecordEntity makeEntity(long id, long version, String jsonData, Instant createdAt, Instant updatedAt) {
+    private RecordEntity makeEntity(long id, long version, String jsonData, Instant createdAt) {
         ObjectNode node = objectMapper.createObjectNode();
         try {
             node = (ObjectNode) objectMapper.readTree(jsonData);
@@ -48,7 +48,6 @@ class RecordVersionControllerTest {
                 .recordId(recordId)
                 .data(node)
                 .createdAt(createdAt)
-                .updatedAt(updatedAt)
                 .build();
     }
 
@@ -57,9 +56,8 @@ class RecordVersionControllerTest {
     void getLatest_ok_returnsDtoJson() throws Exception {
         long id = 10L;
         Instant createdAt = Instant.parse("2025-01-01T00:00:00Z");
-        Instant updatedAt = Instant.parse("2025-01-02T00:00:00Z");
 
-        RecordEntity entity = makeEntity(id, 7L, "{\"a\":1}", createdAt, updatedAt);
+        RecordEntity entity = makeEntity(id, 7L, "{\"a\":1}", createdAt);
         Mockito.when(recordService.getLatestRecord(eq(id))).thenReturn(entity);
 
         mockMvc.perform(get("/api/v2/records/{id}", id))
@@ -69,8 +67,7 @@ class RecordVersionControllerTest {
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.version").value(7))
                 .andExpect(jsonPath("$.data").value("{\"a\":1}"))
-                .andExpect(jsonPath("$.createdAt").value(createdAt.toString()))
-                .andExpect(jsonPath("$.updatedAt").value(updatedAt.toString()));
+                .andExpect(jsonPath("$.createdAt").value(createdAt.toString()));
 
         Mockito.verify(recordService).getLatestRecord(eq(id));
         Mockito.verify(recordService, Mockito.never()).getRecord(anyLong(), anyLong());
@@ -83,9 +80,8 @@ class RecordVersionControllerTest {
         long version = 3L;
 
         Instant createdAt = Instant.parse("2025-02-01T00:00:00Z");
-        Instant updatedAt = Instant.parse("2025-02-02T00:00:00Z");
 
-        RecordEntity entity = makeEntity(id, version, "{\"x\":\"y\"}", createdAt, updatedAt);
+        RecordEntity entity = makeEntity(id, version, "{\"x\":\"y\"}", createdAt);
         Mockito.when(recordService.getRecord(eq(id), eq(version))).thenReturn(entity);
 
         mockMvc.perform(get("/api/v2/records/{id}", id)
@@ -96,8 +92,7 @@ class RecordVersionControllerTest {
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.version").value(3))
                 .andExpect(jsonPath("$.data").value("{\"x\":\"y\"}"))
-                .andExpect(jsonPath("$.createdAt").value(createdAt.toString()))
-                .andExpect(jsonPath("$.updatedAt").value(updatedAt.toString()));
+                .andExpect(jsonPath("$.createdAt").value(createdAt.toString()));
 
         Mockito.verify(recordService).getRecord(eq(id), eq(version));
         Mockito.verify(recordService, Mockito.never()).getLatestRecord(anyLong());
@@ -120,8 +115,8 @@ class RecordVersionControllerTest {
         Instant t1 = Instant.parse("2025-03-01T00:00:00Z");
         Instant t2 = Instant.parse("2025-03-02T00:00:00Z");
 
-        RecordEntity v1 = makeEntity(id, 1L, "{\"v\":1}", t1, t1);
-        RecordEntity v2 = makeEntity(id, 2L, "{\"v\":2}", t2, t2);
+        RecordEntity v1 = makeEntity(id, 1L, "{\"v\":1}", t1);
+        RecordEntity v2 = makeEntity(id, 2L, "{\"v\":2}", t2);
 
         Mockito.when(recordService.listVersions(eq(id))).thenReturn(List.of(v1, v2));
 

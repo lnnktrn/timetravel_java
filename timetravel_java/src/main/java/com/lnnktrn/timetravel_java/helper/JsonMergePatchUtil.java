@@ -25,17 +25,13 @@ public class JsonMergePatchUtil {
      */
     public JsonNode applyMergePatch(JsonNode target, JsonNode patch) {
         if (patch == null || patch.isNull()) {
-            // по merge-patch это значит "заменить целиком на null",
-            // но для твоего кейса обычно patch root null не используют.
             return patch;
         }
 
-        // если patch не объект - заменить target целиком
         if (!patch.isObject()) {
             return patch;
         }
 
-        // target должен быть объектом, иначе делаем новый объект
         ObjectNode targetObj = (target != null && target.isObject())
                 ? (ObjectNode) target.deepCopy()
                 : objectMapper.createObjectNode();
@@ -57,7 +53,7 @@ public class JsonMergePatchUtil {
                 JsonNode mergedChild = applyMergePatch(targetValue, patchValue);
                 targetObj.set(fieldName, mergedChild);
             } else {
-                // scalar или array: replace
+                // scalar or array: replace
                 targetObj.set(fieldName, patchValue);
             }
         }

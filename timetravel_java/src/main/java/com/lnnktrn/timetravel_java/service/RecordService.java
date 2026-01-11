@@ -25,8 +25,7 @@ public class RecordService {
     @Autowired
     private JsonMergePatchUtil jsonMergePatchUtil;
     @Autowired
-    ObjectMapper objectMapper;
-
+    private ObjectMapper objectMapper;
 
     public RecordEntity getLatestRecord(Long id) {
         return latestVersionRepository.findLatestRecordById(id)
@@ -50,35 +49,35 @@ public class RecordService {
 
     @Transactional
     public RecordEntity upsertLatestVersion(Long id, JsonNode patch) {
-        var latestOpt = latestVersionRepository.findByIdForUpdate(id); // PESSIMISTIC_WRITE
+        var latestOpt = latestVersionRepository.findByIdForUpdate(id);
 
         long newVersion;
         JsonNode baseData;
+        LatestVersionEntity latest;
 
         if (latestOpt.isPresent()) {
-            var latest = latestOpt.get();
+            latest = latestOpt.get();
+            baseData = getRecord(id, latest.getVersion()).getData();
             newVersion = latest.getVersion() + 1;
-            var current = getRecord(id, latest.getVersion());
-            baseData = current.getData();
-            latest.setVersion(newVersion);
-            latestVersionRepository.save(latest);
         } else {
-            newVersion = 1;
             baseData = objectMapper.createObjectNode();
-            latestVersionRepository.save(LatestVersionEntity.builder()
-                    .id(id)
-                    .version(newVersion)
-                    .build()
-            );
+            newVersion = 1;
+            latest = LatestVersionEntity.builder().id(id).version(newVersion).build();
         }
+
         JsonNode newData = jsonMergePatchUtil.applyMergePatch(baseData, patch);
 
-        var newRecord = RecordEntity.builder().recordId(RecordId.builder()
-                        .id(id).version(newVersion)
-                        .build())
-                .data(newData)
-                .build();
-        return recordRepository.save(newRecord);
+        var saved = recordRepository.save(
+                RecordEntity.builder()
+                        .recordId(RecordId.builder().id(id).version(newVersion).build())
+                        .data(newData)
+                        .build()
+        );
 
+        latest.setVersion(newVersion);
+        latestVersionRepository.save(latest);
+
+        return saved;
     }
+    
 }

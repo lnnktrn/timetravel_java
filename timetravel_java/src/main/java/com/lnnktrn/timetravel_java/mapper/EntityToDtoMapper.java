@@ -9,7 +9,6 @@ public class EntityToDtoMapper {
                 recordEntity.getRecordId().getId(),
                 recordEntity.getRecordId().getVersion(),
                 recordEntity.getData().toString(),
-                recordEntity.getCreatedAt(),   // убери если нет поля
-                recordEntity.getUpdatedAt());
+                recordEntity.getCreatedAt());
     }
 }

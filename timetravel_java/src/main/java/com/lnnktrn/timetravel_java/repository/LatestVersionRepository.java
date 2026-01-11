@@ -2,16 +2,12 @@ package com.lnnktrn.timetravel_java.repository;
 
 import com.lnnktrn.timetravel_java.entity.LatestVersionEntity;
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
-import com.lnnktrn.timetravel_java.entity.RecordId;
 import jakarta.persistence.LockModeType;
-import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface LatestVersionRepository extends JpaRepository<LatestVersionEntity, Long> {

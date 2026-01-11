@@ -5,6 +5,7 @@ import com.lnnktrn.timetravel_java.dto.RecordDto;
 import com.lnnktrn.timetravel_java.mapper.EntityToDtoMapper;
 import com.lnnktrn.timetravel_java.service.RecordService;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public class RecordController {
     @PostMapping("/{id}")
     public ResponseEntity<Void> updateRecordById(
             @PathVariable @Min(1) Long id,
-            @RequestBody JsonNode data
+            @RequestBody @NotNull JsonNode data
     ) {
         recordService.upsertLatestVersion(id, data);
         return ResponseEntity.status(HttpStatus.CREATED).build();

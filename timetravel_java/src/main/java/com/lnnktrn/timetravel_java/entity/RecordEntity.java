@@ -22,16 +22,11 @@ public class RecordEntity {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
-    
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private Instant updatedAt;
 
-    public RecordEntity(RecordId recordId, JsonNode data, Instant createdAt, Instant updatedAt) {
+    public RecordEntity(RecordId recordId, JsonNode data, Instant createdAt) {
         this.recordId = recordId;
         this.data = data;
         this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 
     public RecordEntity() {
@@ -62,15 +57,6 @@ public class RecordEntity {
         this.createdAt = createdAt;
     }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-
     public static RecordEntityBuilder builder() {
         return new RecordEntityBuilder();
     }
@@ -79,7 +65,6 @@ public class RecordEntity {
         private RecordId recordId;
         private JsonNode data;
         private Instant createdAt;
-        private Instant updatedAt;
 
         RecordEntityBuilder() {
         }
@@ -99,13 +84,8 @@ public class RecordEntity {
             return this;
         }
 
-        public RecordEntityBuilder updatedAt(Instant updatedAt) {
-            this.updatedAt = updatedAt;
-            return this;
-        }
-
         public RecordEntity build() {
-            return new RecordEntity(recordId, data, createdAt, updatedAt);
+            return new RecordEntity(recordId, data, createdAt);
         }
     }
 }
