@@ -1,6 +1,7 @@
 package com.lnnktrn.timetravel_java.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lnnktrn.timetravel_java.entity.LatestVersionEntity;
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
 import com.lnnktrn.timetravel_java.entity.RecordId;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class RecordService {
@@ -24,6 +24,8 @@ public class RecordService {
     private LatestVersionRepository latestVersionRepository;
     @Autowired
     private JsonMergePatchUtil jsonMergePatchUtil;
+    @Autowired
+    ObjectMapper objectMapper;
 
 
     public RecordEntity getLatestRecord(Long id) {
@@ -47,32 +49,36 @@ public class RecordService {
     }
 
     @Transactional
-    public boolean UpsertLatestVersion(Long id, JsonNode patch) {
-        Optional<RecordEntity> existingRecord = latestVersionRepository.findLatestRecordById(id);
-        Long newVersion;
-        JsonNode newData;
-        if (existingRecord.isPresent()) {
-            var existingVersion = existingRecord.get().getRecordId().getVersion();
-            newVersion = existingVersion + 1L;
-            latestVersionRepository.updateVersionById(id, newVersion);
-            JsonNode existingData = existingRecord.get().getData();
-            newData = jsonMergePatchUtil.applyMergePatch(existingData, patch);
+    public RecordEntity upsertLatestVersion(Long id, JsonNode patch) {
+        var latestOpt = latestVersionRepository.findByIdForUpdate(id); // PESSIMISTIC_WRITE
+
+        long newVersion;
+        JsonNode baseData;
+
+        if (latestOpt.isPresent()) {
+            var latest = latestOpt.get();
+            newVersion = latest.getVersion() + 1;
+            var current = getRecord(id, latest.getVersion());
+            baseData = current.getData();
+            latest.setVersion(newVersion);
+            latestVersionRepository.save(latest);
         } else {
-            newVersion = 1L;
-            newData = patch;
-            var newLatestRecord = LatestVersionEntity.builder()
+            newVersion = 1;
+            baseData = objectMapper.createObjectNode();
+            latestVersionRepository.save(LatestVersionEntity.builder()
                     .id(id)
                     .version(newVersion)
-                    .build();
-            latestVersionRepository.save(newLatestRecord);
+                    .build()
+            );
         }
-        RecordId recordId = RecordId.builder().id(id).version(newVersion).build();
-        var newRecord = RecordEntity.builder()
-                .recordId(recordId)
+        JsonNode newData = jsonMergePatchUtil.applyMergePatch(baseData, patch);
+
+        var newRecord = RecordEntity.builder().recordId(RecordId.builder()
+                        .id(id).version(newVersion)
+                        .build())
                 .data(newData)
                 .build();
-        recordRepository.save(newRecord);
+        return recordRepository.save(newRecord);
 
-        return existingRecord.isPresent();
     }
 }

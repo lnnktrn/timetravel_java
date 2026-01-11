@@ -161,35 +161,39 @@ class RecordVersionControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v2/records/{id} -> 200 if UpsertLatestVersion returns true")
+    @DisplayName("POST /api/v2/records/{id} -> 200 if UpsertLatestVersion updated a record")
     void post_updated_true_returns200() throws Exception {
         long id = 10L;
         ObjectNode body = objectMapper.createObjectNode().put("k", "v");
 
-        Mockito.when(recordService.UpsertLatestVersion(eq(id), any())).thenReturn(true);
+        Mockito.when(recordService.upsertLatestVersion(eq(id), any())).thenReturn(RecordEntity.builder()
+                .recordId(RecordId.builder().id(id).version(1L).build())
+                .build());
 
         mockMvc.perform(post("/api/v2/records/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated());
 
-        Mockito.verify(recordService).UpsertLatestVersion(eq(id), any());
+        Mockito.verify(recordService).upsertLatestVersion(eq(id), any());
     }
 
     @Test
-    @DisplayName("POST /api/v2/records/{id} -> 201 if UpsertLatestVersion returns false (created)")
+    @DisplayName("POST /api/v2/records/{id} -> 201 if UpsertLatestVersion created a record")
     void post_created_false_returns201() throws Exception {
         long id = 10L;
         ObjectNode body = objectMapper.createObjectNode().put("k", "v");
 
-        Mockito.when(recordService.UpsertLatestVersion(eq(id), any())).thenReturn(false);
+        Mockito.when(recordService.upsertLatestVersion(eq(id), any())).thenReturn(RecordEntity.builder()
+                .recordId(RecordId.builder().id(id).version(1L).build())
+                .build());
 
         mockMvc.perform(post("/api/v2/records/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated());
 
-        Mockito.verify(recordService).UpsertLatestVersion(eq(id), any());
+        Mockito.verify(recordService).upsertLatestVersion(eq(id), any());
     }
 
     @Test

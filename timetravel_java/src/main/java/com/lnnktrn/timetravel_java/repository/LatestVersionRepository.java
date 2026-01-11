@@ -3,8 +3,10 @@ package com.lnnktrn.timetravel_java.repository;
 import com.lnnktrn.timetravel_java.entity.LatestVersionEntity;
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
 import com.lnnktrn.timetravel_java.entity.RecordId;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,15 +26,8 @@ public interface LatestVersionRepository extends JpaRepository<LatestVersionEnti
             """)
     Optional<RecordEntity> findLatestRecordById(Long id);
 
-    @Modifying
-    @Transactional
-    @Query("""
-        update LatestVersionEntity l
-           set l.version = :version
-         where l.id = :id
-    """)
-    int updateVersionById(
-            @Param("id") Long id,
-            @Param("version") Long version
-    );
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select l from LatestVersionEntity l where l.id = :id")
+    Optional<LatestVersionEntity> findByIdForUpdate(@Param("id") Long id);
+
 }

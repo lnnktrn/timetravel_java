@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -67,12 +66,11 @@ public class RecordVersionController {
     // Apply updates to the latest version while preserving history
     // POST /api/v2/raecords/{id}
     @PostMapping("/{id}")
-    @Transactional
     public ResponseEntity<Void> updateRecordById(
             @PathVariable @Min(1) Long id,
             @RequestBody JsonNode data
     ) {
-        recordService.UpsertLatestVersion(id, data);
+        recordService.upsertLatestVersion(id, data);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
