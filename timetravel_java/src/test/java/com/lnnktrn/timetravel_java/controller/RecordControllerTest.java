@@ -1,14 +1,13 @@
 package com.lnnktrn.timetravel_java.controller;
 
 import com.lnnktrn.timetravel_java.controller.v2.RecordController;
+import com.lnnktrn.timetravel_java.exception.NoSuchRecordException;
 import com.lnnktrn.timetravel_java.service.RecordService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,7 +24,8 @@ class RecordControllerTest {
 
     @Test
     void get_returns404_whenLatestRecordDoesNotExist() throws Exception {
-        when(recordService.getLatestRecord(1L)).thenReturn(Optional.empty());
+        when(recordService.getLatestRecord(1L))
+                .thenThrow(new NoSuchRecordException("1"));
 
         mockMvc.perform(get("/api/v2/records/1/latest"))
                 .andExpect(status().isNotFound());

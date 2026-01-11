@@ -2,6 +2,7 @@ package com.lnnktrn.timetravel_java.service;
 
 import com.lnnktrn.timetravel_java.entity.RecordEntity;
 import com.lnnktrn.timetravel_java.entity.RecordId;
+import com.lnnktrn.timetravel_java.exception.NoSuchRecordException;
 import com.lnnktrn.timetravel_java.repository.LatestVersionRepository;
 import com.lnnktrn.timetravel_java.repository.RecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,41 +16,69 @@ import java.util.Optional;
 public class RecordService {
 
     @Autowired
-    RecordRepository repo;
+    RecordRepository recordRepository;
     @Autowired
     LatestVersionRepository latestVersionRepository;
 
-    public Optional<RecordEntity> getLatestRecord(Long id) {
-        return latestVersionRepository.findLatestRecordById(id);
+    public RecordEntity getLatestRecord(Long id) throws NoSuchRecordException {
+        return latestVersionRepository.findLatestRecordById(id)
+                .orElseThrow(() -> new NoSuchRecordException(id));
     }
 
-    public Optional<RecordEntity> getRecord(Long id, Long version) {
-        if (version == null || version <= 0) {
-            // throw exception
-            return Optional.empty();
+    public List<RecordEntity> getRecordsByVersion(Long id) throws NoSuchRecordException {
+        List<RecordEntity> entities =   latestVersionRepository.findLatestRecordByVersion(id);
+        if (entities.isEmpty()) {
+            throw new NoSuchRecordException(id);
         }
-        RecordId recordId = RecordId.builder().id(id).version(version).build();
-        return repo.findById(recordId);
+        return entities;
     }
 
-    public List<RecordEntity> listVersions(Long id) {
-        return repo.findAllByRecordId_IdOrderByRecordId_VersionAsc(id);
+
+    public RecordEntity getRecord(Long id, Long version) throws NoSuchRecordException {
+        RecordId recordId = RecordId.builder().id(id).version(version).build();
+        return recordRepository.findById(recordId)
+                .orElseThrow(() -> new NoSuchRecordException(id, version));
+    }
+
+    public List<RecordEntity> listVersions(Long id) throws NoSuchRecordException {
+       List<RecordEntity> entities =  recordRepository.findAllByRecordId_IdOrderByRecordId_VersionAsc(id);
+       if (entities.isEmpty()) {
+          throw new NoSuchRecordException(id);
+       }
+       return entities;
     }
 
     @Transactional
-    public boolean upsertByIdAndVersion(Long id, Long version, String data) {
-        RecordId recordId = RecordId.builder().id(id).version(version).build();
-        RecordEntity newEntity = RecordEntity.builder()
+    public void updateLatestVersionById(Long id, String data) throws NoSuchRecordException{
+        Optional<RecordEntity> existingRecord = latestVersionRepository.findLatestRecordById(id);
+        existingRecord.map(er -> {
+            RecordId recordId = RecordId.builder().id(id).version(er.getRecordId().getVersion() + 1).build();
+            return RecordEntity.builder()
+                    .recordId(recordId)
+                    .createdAt(er.getCreatedAt())
+                    .data(data)
+                    .build();
+        }).map(newEntity -> recordRepository.save(newEntity))
+                .orElseThrow(() -> new NoSuchRecordException(id));
+    }
+
+    @Transactional
+    public boolean UpsertLatestVersion(Long id, String data){
+        Optional<RecordEntity> existingRecord = latestVersionRepository.findLatestRecordById(id);
+        Long newVersion;
+        if (existingRecord.isPresent()) {
+           var existingVersion = existingRecord.get().getRecordId().getVersion();
+           newVersion = existingVersion + 1L;
+        } else {
+            newVersion= 1L;
+        }
+        RecordId recordId = RecordId.builder().id(id).version(newVersion).build();
+        var newRecord = RecordEntity.builder()
                 .recordId(recordId)
                 .data(data)
                 .build();
-        boolean existed = repo.existsById(recordId);
-//        LatestVersionEntity latestVersionEntity = LatestVersionEntity.builder()
-//                .id(recordId.getId())
-//                .version(recordId.getVersion())
-//                .build();
-        repo.save(newEntity);
-
-        return existed;
-    }
+        recordRepository.save(newRecord);
+        latestVersionRepository.updateVersionById(id, newVersion);
+        return existingRecord.isPresent();
+       }
 }

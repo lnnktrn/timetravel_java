@@ -38,10 +38,8 @@ class RecordServiceTest {
 
         when(latestVersionRepository.findLatestRecordById(id)).thenReturn(Optional.of(entity));
 
-        Optional<RecordEntity> result = service.getLatestRecord(id);
-
-        assertTrue(result.isPresent());
-        assertEquals(7L, result.get().getRecordId().getVersion());
+        RecordEntity result = service.getLatestRecord(id);
+        assertEquals(7L, result.getRecordId().getVersion());
         verify(latestVersionRepository).findLatestRecordById(id);
         verifyNoInteractions(repo);
     }
