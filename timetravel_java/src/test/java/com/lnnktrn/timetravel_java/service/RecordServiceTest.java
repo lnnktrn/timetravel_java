@@ -137,46 +137,6 @@ class RecordServiceTest {
     }
 
     @Test
-    void updateLatestVersionById_savesNewEntityWithIncrementedVersion_whenExisting() {
-        Long id = 100L;
-        String data = "{\"n\":\"v\"}";
-
-        RecordEntity existing = RecordEntity.builder()
-                .recordId(RecordId.builder().id(id).version(7L).build())
-                .data("{\"old\":\"data\"}")
-                .build();
-
-        when(latestVersionRepository.findLatestRecordById(id)).thenReturn(Optional.of(existing));
-        when(recordRepository.save(any(RecordEntity.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
-
-        service.updateLatestVersionById(id, data);
-
-        ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
-        verify(recordRepository).save(captor.capture());
-
-        RecordEntity saved = captor.getValue();
-        assertEquals(id, saved.getRecordId().getId());
-        assertEquals(8L, saved.getRecordId().getVersion()); // +1
-        assertEquals(data, saved.getData());
-
-        verify(latestVersionRepository).findLatestRecordById(id);
-        verifyNoMoreInteractions(latestVersionRepository);
-    }
-
-    @Test
-    void updateLatestVersionById_throws_whenNoExisting() {
-        Long id = 100L;
-
-        when(latestVersionRepository.findLatestRecordById(id)).thenReturn(Optional.empty());
-
-        assertThrows(NoSuchRecordException.class, () -> service.updateLatestVersionById(id, "{\"x\":\"y\"}"));
-
-        verify(latestVersionRepository).findLatestRecordById(id);
-        verifyNoInteractions(recordRepository);
-    }
-
-    @Test
     void upsertLatestVersion_returnsTrue_whenExistingAndUpdatesPointer() {
         Long id = 1L;
         String data = "{\"a\":\"b\"}";

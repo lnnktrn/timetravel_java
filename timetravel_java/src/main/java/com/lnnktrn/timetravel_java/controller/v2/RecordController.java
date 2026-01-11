@@ -74,7 +74,7 @@ public class RecordController {
     // POST /api/v2/records/{id}
     @PostMapping("/{id}")
     @Transactional
-    public ResponseEntity<Void> updateLatestVersionById(
+    public ResponseEntity<Void> updateRecordById(
             @PathVariable Long id,
             @RequestBody String data
     ) {

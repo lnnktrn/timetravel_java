@@ -41,20 +41,6 @@ public class RecordService {
     }
 
     @Transactional
-    public void updateLatestVersionById(Long id, String data) {
-        Optional<RecordEntity> existingRecord = latestVersionRepository.findLatestRecordById(id);
-        existingRecord.map(er -> {
-            RecordId recordId = RecordId.builder().id(id).version(er.getRecordId().getVersion() + 1).build();
-            return RecordEntity.builder()
-                    .recordId(recordId)
-                    .createdAt(er.getCreatedAt())
-                    .data(data)
-                    .build();
-        }).map(newEntity -> recordRepository.save(newEntity))
-                .orElseThrow(() -> new NoSuchRecordException(id));
-    }
-
-    @Transactional
     public boolean UpsertLatestVersion(Long id, String data){
         Optional<RecordEntity> existingRecord = latestVersionRepository.findLatestRecordById(id);
         Long newVersion;
